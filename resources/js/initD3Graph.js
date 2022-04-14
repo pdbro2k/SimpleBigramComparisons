@@ -1,22 +1,24 @@
-'use strict';
+"use strict";
 
-function initD3Graph(selector, nodes, links, groupColors, addTexts = false, manyBodyForceStrength = -100, width = window.innerWidth, height = window.innerHeight) {
+function initD3Graph(selector, nodes, links, groupColors, addTexts = false, manyBodyForceStrength = -1000, width = window.innerWidth, height = window.innerHeight) {
   // set params
-  let highlightingColor = "#FFA500";
-  let linkColor = "#E5E5E5";
+  var highlightingColor = "#FFA500";
+  var linkColor = "#E5E5E5";
 
-  let nodeSize = 10;
+  var nodeSize = 10;
+  var markerHeight = 6;
+  var markerWidth = 6;
 
   // init dragDrop
-  let dragDrop = d3.drag().on('start', function(node) {
+  var dragDrop = d3.drag().on('start', function(event, node) {
     node.fx = node.x;
     node.fy = node.y;
-  }).on('drag', function(node) {
+  }).on('drag', function(event, node) {
     simulation.alphaTarget(0.7).restart();
-    node.fx = d3.event.x;
-    node.fy = d3.event.y;
-  }).on('end', function(node) {
-    if (!d3.event.active) {
+    node.fx = event.x;
+    node.fy = event.y;
+  }).on('end', function(event, node) {
+    if (!event.active) {
       simulation.alphaTarget(0);
     }
     node.fx = null;
@@ -24,19 +26,19 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
   });
 
   // build svg root
-  let svg = d3.select(selector)
+  var svg = d3.select(selector)
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .call(d3.zoom().on("zoom", function() {
-      svg.attr("transform", d3.event.transform);
+    .call(d3.zoom().on("zoom", function(event) {
+      svg.attr("transform", event.transform);
     }));
 
   // add the links and arrows
   svg = svg.append("g");
 
   // build links and nodes with (tooltip) texts
-  let linkElements = svg.append("g")
+  var linkElements = svg.append("g")
     .attr("class", "links")
     .selectAll("line")
     .data(links)
@@ -48,14 +50,14 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
         .attr("stroke", linkColor)
         .attr("class", "link");
 
-  let nodeWrappers = svg.append("g")
+  var nodeWrappers = svg.append("g")
     .attr("class", "nodes")
     .selectAll("circle")
     .data(nodes)
     .enter()
     .append("g");
 
-  let nodeElements = nodeWrappers.append("circle")
+  var nodeElements = nodeWrappers.append("circle")
     .attr("r", nodeSize)
     .attr("fill", getNodeColor)
     .call(dragDrop).on('click', selectNode);
@@ -64,20 +66,24 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
         return node.id;
     });
 
-  let textElements = null;
+  var textElements = null;
   if (addTexts) {
-    textElements = nodeWrappers.append("svg:text").text(function(node) {
-      return node.text ? node.text : node.id;
+    textElements = nodeWrappers.append("svg:text");
+    textElements.each(function(node) {
+        let currentTextElement = d3.select(this);
+        currentTextElement.text(function(node) {
+            return node.text ? node.text : node.id;
+        });
     });
   }
 
   // init simulation with forces
-  let linkForce = d3.forceLink()
+  var linkForce = d3.forceLink()
     .id(function(link) {
-      return link.id
+      return link.id;
     });
 
-  let simulation = d3.forceSimulation()
+  var simulation = d3.forceSimulation()
     .force('link', linkForce)
     .force('charge', d3.forceManyBody().strength(manyBodyForceStrength))
     .force('center', d3.forceCenter(width / 2, height / 2));
@@ -85,32 +91,32 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
   simulation.nodes(nodes).on('tick', () => {
     nodeElements
       .attr('cx', function(node) {
-        return node.x
+        return node.x;
       })
       .attr('cy', function(node) {
-        return node.y
+        return node.y;
       });
     if (textElements != null) {
       textElements
         .attr('x', function(node) {
-          return node.x + nodeSize
+          return node.x + nodeSize;
         })
         .attr('y', function(node) {
-          return node.y + nodeSize / 2
+          return node.y + nodeSize / 2;
         });
     }
     linkElements
       .attr('x1', function(link) {
-        return link.source.x
+        return link.source.x;
       })
       .attr('y1', function(link) {
-        return link.source.y
+        return link.source.y;
       })
       .attr('x2', function(link) {
-        return link.target.x
+        return link.target.x;
       })
       .attr('y2', function(link) {
-        return link.target.y
+        return link.target.y;
       });
   });
 
@@ -118,21 +124,16 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
 
 
   // init local helper functions
-  function selectNode(selectedNode) {
-    let neighbors = getNeighbors(selectedNode);
+  function selectNode(event, selectedNode) {
+    var neighbors = getNeighbors(selectedNode);
 
-    // highlight selected nodes
+    // we modify the styles to highlight selected nodes
     nodeElements.attr('fill', function(node) {
       return getNodeColor(node, neighbors);
     });
-    if (textElements != null) {
-      textElements.attr('fill', function(node) {
-        return getTextColor(node, neighbors);
-      });
-    }
-	linkElements.attr('stroke', function (link) {
-		return getLinkColor(selectedNode, link);
-	});
+    linkElements.attr('stroke', function(link) {
+      return getLinkColor(selectedNode, link);
+    });
   }
 
   function getNeighbors(node) {
@@ -159,9 +160,5 @@ function initD3Graph(selector, nodes, links, groupColors, addTexts = false, many
 
   function getLinkColor(node, link) {
     return isNeighborLink(node, link) ? highlightingColor : linkColor;
-  }
-
-  function getTextColor(node, neighbors) {
-    return groupColors[node.group];
   }
 }
