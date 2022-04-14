@@ -33,16 +33,16 @@
     <!-- additional JS scripts -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.4.4/d3.min.js"></script>
     <script type="text/javascript" src="resources/js/initD3Graph.js"></script>
-	
+
     <script type="text/javascript" src="resources/js/buildBigramLinks.js"></script>
     <script type="text/javascript" src="resources/js/buildCrossTable.js"></script>
-		
-    <script type="text/javascript" src="data/christmasNodes.js"></script>
+
+    <script type="text/javascript" src="data/easterNodes.js"></script>
     <script type="text/javascript">
 $("#crosstableWrapper").append(buildTable(nodes, "crosstable"));
 initD3Graph("#viewport", nodes, buildBigramLinks(nodes), {}, true, -1500);
     </script>
-	
+
     <script type="text/javascript">
 // init label toggler
 function toggleLabels() {
